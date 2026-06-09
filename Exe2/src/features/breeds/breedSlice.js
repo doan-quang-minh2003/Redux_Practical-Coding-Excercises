@@ -7,6 +7,7 @@ import axios from "axios";
 
 const API_URL =
   "https://dogapi.dog/api/v2/breeds";
+const CACHE_KEY = "breeds_cache";
 
 export const fetchBreeds =
   createAsyncThunk(
@@ -16,8 +17,28 @@ export const fetchBreeds =
         const response =
           await axios.get(API_URL);
 
-        return response.data;
-      } catch (error) {
+        const payload = {
+          breeds: response.data.data,
+          offline: false,
+        };
+        localStorage.setItem(
+          CACHE_KEY,
+          JSON.stringify(payload)
+        );
+
+        return payload;
+      } catch {
+        const cached = localStorage.getItem(
+          CACHE_KEY
+        );
+
+        if (cached) {
+          return {
+            breeds: JSON.parse(cached).breeds,
+            offline: true,
+          };
+        }
+
         return thunkAPI.rejectWithValue(
           "Unable to connect to API"
         );
@@ -29,6 +50,7 @@ const initialState = {
   breeds: [],
   loading: false,
   error: null,
+  offline: false,
 };
 
 const breedSlice = createSlice({
@@ -43,6 +65,8 @@ const breedSlice = createSlice({
         fetchBreeds.pending,
         (state) => {
           state.loading = true;
+          state.error = null;
+          state.offline = false;
         }
       )
 
@@ -51,7 +75,9 @@ const breedSlice = createSlice({
         (state, action) => {
           state.loading = false;
           state.breeds =
-            action.payload.data;
+            action.payload.breeds || [];
+          state.offline =
+            action.payload.offline ?? false;
           state.error = null;
         }
       )
@@ -61,9 +87,11 @@ const breedSlice = createSlice({
         (state, action) => {
           state.loading = false;
           state.error = action.payload;
+          state.offline = false;
         }
       );
   },
 });
 
 export default breedSlice.reducer;
+

@@ -16,9 +16,12 @@ function BreedList() {
     breeds,
     loading,
     error,
+    offline,
   } = useSelector(
     (state) => state.breeds
   );
+
+  const breedList = Array.isArray(breeds) ? breeds : [];
 
   useEffect(() => {
     dispatch(fetchBreeds());
@@ -28,61 +31,38 @@ function BreedList() {
     return <h2>Loading...</h2>;
   }
 
+  if (error && breeds.length === 0) {
+    return <h2>{error}</h2>;
+  }
+
   return (
     <div>
-      {error && (
+      {offline && (
         <p>
-          Offline mode:
-          displaying cached data.
+          Offline mode: displaying cached data.
         </p>
       )}
 
-      {breeds.map((breed) => (
+      {breedList.map((breed) => (
         <div
           key={breed.id}
           style={{
-            border:
-              "1px solid #ccc",
+            border: "1px solid #ccc",
             padding: "10px",
             marginBottom: "10px",
           }}
         >
-          <h3>
-            {
-              breed.attributes
-                .name
-            }
-          </h3>
+          <h3>{breed.attributes.name}</h3>
+
+          <p>{breed.attributes.description}</p>
 
           <p>
-            {
-              breed.attributes
-                .description
-            }
+            Life Span: {breed.attributes.life.min}-
+            {breed.attributes.life.max} years
           </p>
 
           <p>
-            Life Span:
-            {
-              breed.attributes
-                .life.min
-            }
-            -
-            {
-              breed.attributes
-                .life.max
-            }
-            years
-          </p>
-
-          <p>
-            Hypoallergenic:
-            {
-              breed.attributes
-                .hypoallergenic
-                ? " Yes"
-                : " No"
-            }
+            Hypoallergenic: {breed.attributes.hypoallergenic ? "Yes" : "No"}
           </p>
         </div>
       ))}
